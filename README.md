@@ -43,12 +43,25 @@ O AeroGlove é uma luva controladora capaz de pilotar drones por gestos, usando 
 
 ## Materiais necessários
 - MCU: ESP32-S3 (ou ESP32 padrão)
+# AeroGlove 🧤✈️
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Controle Gestual para Drones com ESP32 e MicroPython
+
+Este documento contém apenas instruções passo a passo para que usuários reproduzam os resultados do projeto AeroGlove. Siga cada etapa com atenção. Não contém dicas de desenvolvimento.
+
+## Resumo
+O AeroGlove é uma luva controladora que permite pilotar drones por meio de gestos naturais da mão. Utiliza um ESP32 e um módulo IMU (MPU9250/MPU6500 + AK8963). O firmware é escrito em MicroPython.
+
+## Materiais necessários
+- MCU: ESP32-S3 (ou ESP32 padrão)
 - IMU: Módulo GY-91 (MPU9250 ou MPU6500 + AK8963)
 - Bateria LiPo 3.7V e circuito de carregamento (ex.: TP4056)
 - Placa de desenvolvimento ou circuito com conectores adequados
-- (Opcional) Impressão 3D do case
+- (Opcional) Case impresso em 3D
 
-## Pinagem (I2C - exemplo)
+## Pinagem (exemplo I2C)
 - SDA: GPIO 8
 - SCL: GPIO 9
 - VCC: 3.3V
@@ -57,19 +70,23 @@ O AeroGlove é uma luva controladora capaz de pilotar drones por gestos, usando 
 Confirme a pinagem no seu hardware antes de alimentar o sistema.
 
 ## Preparar o firmware MicroPython
-1. Baixe a imagem de firmware MicroPython compatível com seu modelo de ESP32 (por exemplo, a imagem oficial para ESP32/ESP32-S3).
+1. Baixe a imagem de firmware MicroPython compatível com o seu modelo de ESP32.
 2. Conecte o ESP32 ao computador via USB.
-3. No PowerShell (Windows), apague a flash e grave o firmware (substitua `<firmware.bin>` pelo nome do arquivo que você baixou e `COM3` pela porta correta):
+3. No PowerShell (Windows), apague a flash e escreva o firmware (substitua `<firmware.bin>` e `COM3` pelos valores corretos):
 
 ```powershell
 esptool.py --chip esp32 --port COM3 erase_flash
 esptool.py --chip esp32 --port COM3 write_flash -z 0x1000 <firmware.bin>
 ```
 
-Observação: se você não tiver `esptool.py`, instale com `pip install esptool`.
+Se necessário, instale o esptool com:
 
-## Enviar o firmware e arquivos do projeto para o dispositivo
-Recomenda-se usar `mpremote` para copiar os arquivos do repositório para o ESP32. Substitua `COM3` pela porta correta.
+```powershell
+pip install esptool
+```
+
+## Enviar os arquivos do projeto para o dispositivo
+Recomenda-se usar o `mpremote` para copiar os arquivos para o ESP32. Substitua `COM3` pela porta correta.
 
 ```powershell
 # listar dispositivos conectados
@@ -91,41 +108,41 @@ mpremote connect serial://COM3 run "import machine; machine.reset()"
 Alternativa: use a IDE Thonny para enviar os arquivos via interface gráfica.
 
 ## Calibração do IMU
-1. Coloque a luva/lógica com o IMU sobre uma superfície estável numa posição neutra.
-2. Ligue o dispositivo ou reinicie-o para que o procedimento de calibração automática (se implementado) seja executado.
-3. Mantenha a mão/parada imóvel durante o ciclo de calibração (10–15 segundos).
-4. Verifique o arquivo `accel_cal.json` no dispositivo para confirmar que os valores de calibração foram gravados (se aplicável).
+1. Coloque a luva com o IMU sobre uma superfície estável em posição neutra.
+2. Ligue o dispositivo ou reinicie-o para executar a calibração automática (se implementada).
+3. Mantenha a mão imóvel durante o ciclo de calibração (10–15 segundos).
+4. Verifique o arquivo `accel_cal.json` no dispositivo para confirmar que os valores foram salvos.
 
 ## Verificar sensores (teste rápido)
-Abra um REPL e execute comandos para confirmar leitura do IMU (exemplo genérico):
+Abra um REPL (prompt interativo) e execute comandos para confirmar leitura do IMU:
 
 ```powershell
 mpremote connect serial://COM3 repl
-# no REPL do MicroPython
+# no prompt do MicroPython
 import mpu9250
 imu = mpu9250.MPU9250()
 print(imu.accel)
 ```
 
-Se receber valores plausíveis (próximos de 0,0,1g em repouso para o eixo Z), o sensor está funcionando.
+Se os valores estiverem plausíveis (aproximadamente 0,0,1g no eixo Z em repouso), o sensor está funcionando.
 
 ## Procedimento de ensaio em voo (reprodução dos resultados)
-AVISO: realize testes de voo em área aberta, com proteção e seguindo normas de segurança. Retire hélices para testes iniciais quando possível.
+AVISO: realize testes em área aberta, com proteção adequada e seguindo normas de segurança. Nas fases iniciais, remova as hélices quando possível.
 
-1. Monte o drone com motores, ESCs e alimentação. Verifique conexões.
-2. Ligue o drone e a luva (AeroGlove). Aguarde até que a luva indique estado pronto (LED piscando para aguardar conexão BLE).
-3. Emparelhe a luva com o sistema de voo do drone via BLE (o LED deve ficar estável quando conectado).
-4. No solo, com hélices removidas ou com proteção, faça o teste de comandos: incline a mão para frente — verifique se o drone recebe comando de avanço; incline para trás — comando de recuo; inclinações laterais — comandos de roll; movimentos de rotação da mão — yaw.
-5. Ao validar a correspondência gesto→comando, prossiga para um teste com hélices e baixa altitude, com retenção manual do drone para verificar resposta de controle.
+1. Monte o drone com motores, ESCs e alimentação. Verifique todas as conexões.
+2. Ligue o drone e a luva (AeroGlove). Aguarde o estado pronto (LED piscando indica espera por conexão BLE).
+3. Emparelhe a luva com o sistema de voo via BLE (LED fica estável quando conectado).
+4. No solo, com hélices removidas ou com proteção, execute os testes: inclinar a mão para frente — comando de avanço; inclinar para trás — recuo; inclinações laterais — roll; rotação da mão — yaw.
+5. Após validar a correspondência gesto→comando, faça um teste com hélices em baixa altitude e supervisão cuidadosa.
 
 ## Indicadores de status
 - LED piscando: aguardando conexão BLE
-- LED fixo: conectado ao drone
+- LED fixo: conectado
 
 ## Arquivos principais usados na reprodução
 - `main.py` — loop principal e mapeamento de gestos
 - `mpu9250.py` / `mpu6500.py` — drivers do IMU
-- `ak8963.py` — driver do magnetômetro (se aplicável)
+- `ak8963.py` — driver do magnetômetro
 - `accel_cal.json` — calibração
 
 ## Segurança e boas práticas
