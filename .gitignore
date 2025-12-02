@@ -1,0 +1,28 @@
+# MicroPython / ESP32 common ignores
+*.pyc
+*.pyo
+__pycache__/
+*.mpy
+*.uf2
+*.bin
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+desktop.ini
+
+# Local secrets / device files
+secrets.py
+.env
+
+# Build artifacts
+build/
+
+# Optional: compiled firmware backups
+firmware-*.bin
+
+# Keep .json that may be needed in repo (remove if secrets)
+# accel_cal.json
