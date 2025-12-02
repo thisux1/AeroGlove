@@ -1,36 +1,35 @@
 # AeroGlove — PyDrone (ESP32 gesture-controlled drone)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/thisux1/AeroGlove?style=social)](https://github.com/thisux1/AeroGlove)
 
-Lightweight MicroPython project for an ESP32-based gesture-controlled drone (PyDrone). The device reads an IMU (MPU6500/MPU9250 + AK8963) and maps user gestures to flight commands (throttle, pitch, roll, yaw). This repo contains drivers, BLE utilities and example firmware for the AeroGlove flight controller.
+Projeto MicroPython leve para ESP32 que implementa controle gestual de drones (PyDrone). O dispositivo lê uma IMU (MPU6500/MPU9250 + AK8963) e traduz gestos da mão em comandos de voo (throttle, pitch, roll, yaw). Este repositório contém drivers, utilitários BLE e firmware de exemplo para o controlador de voo AeroGlove.
 
-## Key features
-- IMU drivers: `mpu6500.py`, `mpu9250.py`, `ak8963.py`
-- BLE utilities and example central/peripheral code (`ble_*`, `lib/aioble`)
-- Example entry scripts: `boot.py`, `main.py`
-- Calibration storage: `accel_cal.json` (keeps calibration data separate from code)
+## Principais funcionalidades
+- Drivers de IMU: `mpu6500.py`, `mpu9250.py`, `ak8963.py`
+- Utilitários BLE e exemplos (arquivos `ble_*`, pasta `lib/aioble`)
+- Scripts de entrada: `boot.py`, `main.py`
+- Armazenamento de calibração: `accel_cal.json`
 
-## Repository layout
-- `boot.py`, `main.py` — device startup and main loop
-- `mpu6500.py`, `mpu9250.py`, `ak8963.py` — sensor drivers
-- `ble_advertising.py`, `ble_simple_peripheral.py` — BLE examples
-- `lib/aioble/` — bundled aioble BLE library used by examples
-- `accel_cal.json` — accelerometer calibration data (keep private if needed)
+## Estrutura do repositório
+- `boot.py`, `main.py` — inicialização do dispositivo e loop principal
+- `mpu6500.py`, `mpu9250.py`, `ak8963.py` — drivers dos sensores
+- `ble_advertising.py`, `ble_simple_peripheral.py` — exemplos BLE
+- `lib/aioble/` — biblioteca aioble incluída para exemplos
+- `accel_cal.json` — dados de calibração do acelerômetro
 
-## Quickstart — getting started (local development)
+## Início rápido — desenvolvimento local
 
-This repository is provided as the final-year PyDrone project source. To get started locally:
+Este repositório é a fonte do projeto PyDrone (trabalho de conclusão). Para começar localmente:
 
-- Clone or copy the project to your development machine.
-- Inspect `main.py`, `boot.py`, and the IMU drivers (`mpu6500.py`, `mpu9250.py`, `ak8963.py`) to configure sensors and gesture mappings for your hardware.
-- Use `mpremote` (or `ampy`) to flash files to your ESP32 (examples below).
+- Clone ou copie o projeto para sua máquina de desenvolvimento.
+- Verifique `main.py`, `boot.py` e os drivers de IMU (`mpu6500.py`, `mpu9250.py`, `ak8963.py`) para ajustar a configuração dos sensores e o mapeamento de gestos ao seu hardware.
+- Use `mpremote` (ou `ampy`) para transferir os arquivos para o ESP32 (exemplos abaixo).
 
-Notes
-- Do not commit device credentials, private keys, or Wi‑Fi passwords. Keep any sensitive files locally and add them to `.gitignore`.
+Observações
+- Não comite credenciais do dispositivo, chaves privadas ou senhas de Wi‑Fi. Mantenha arquivos sensíveis localmente e adicione-os ao `.gitignore`.
 
-## Flashing / deploying to the ESP32 (Windows PowerShell examples)
-Recommended: use `mpremote` (part of the mpremote toolchain). This copies the repository files to the device filesystem.
+## Gravação / implantação no ESP32 (exemplos para PowerShell no Windows)
+Recomenda-se usar o `mpremote` (parte do conjunto de ferramentas mpremote). Isso copia os arquivos do repositório para o sistema de arquivos do dispositivo.
 
 ```powershell
 # AeroGlove 🧤✈️
