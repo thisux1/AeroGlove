@@ -18,88 +18,120 @@ Lightweight MicroPython project for an ESP32-based gesture-controlled drone (PyD
 - `lib/aioble/` — bundled aioble BLE library used by examples
 - `accel_cal.json` — accelerometer calibration data (keep private if needed)
 
-## Quickstart — publish this repo to GitHub
-1. Create/confirm a GitHub repository (e.g. `thisux1/AeroGlove`). You can do this on the GitHub web UI or with the GitHub CLI.
+## Quickstart — getting started (local development)
 
-2. From the project root, initialize and push (PowerShell):
+This repository is provided as the final-year PyDrone project source. To get started locally:
 
-```powershell
-# if you haven't already
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<your-username>/AeroGlove.git
-git push -u origin main
-```
-
-If you prefer to create-and-push in one step with the GitHub CLI:
-
-```powershell
-gh auth login
-gh repo create thisux1/AeroGlove --public --source=. --remote=origin --push
-```
+- Clone or copy the project to your development machine.
+- Inspect `main.py`, `boot.py`, and the IMU drivers (`mpu6500.py`, `mpu9250.py`, `ak8963.py`) to configure sensors and gesture mappings for your hardware.
+- Use `mpremote` (or `ampy`) to flash files to your ESP32 (examples below).
 
 Notes
-- Ensure `secrets.py` or any other sensitive file is removed or in `.gitignore` before pushing.
-- Replace the remote URL or `thisux1` with your GitHub username if different.
+- Do not commit device credentials, private keys, or Wi‑Fi passwords. Keep any sensitive files locally and add them to `.gitignore`.
 
 ## Flashing / deploying to the ESP32 (Windows PowerShell examples)
 Recommended: use `mpremote` (part of the mpremote toolchain). This copies the repository files to the device filesystem.
 
 ```powershell
-# list connected devices (Windows)
-mpremote list
+# AeroGlove 🧤✈️
+> Controle Gestual para Drones com ESP32 e MicroPython
 
-# connect and copy project files to device (adjust the port/URI as needed)
-mpremote connect serial://COM3 fs put . /
+Este documento contém apenas instruções passo a passo para que usuários reproduzam os resultados demonstrados pelo projeto AeroGlove. Siga cada etapa com atenção. Não contém dicas de desenvolvimento.
 
-# or, if mpremote shows a device name like 'usb', use that
-mpremote connect usb0 fs put . /
+## Resumo do projeto
+O AeroGlove é uma luva controladora capaz de pilotar drones por gestos, usando um ESP32 e uma IMU (MPU9250/MPU6500 + AK8963). O firmware é escrito em MicroPython.
+
+## Materiais necessários
+- MCU: ESP32-S3 (ou ESP32 padrão)
+- IMU: Módulo GY-91 (MPU9250 ou MPU6500 + AK8963)
+- Bateria LiPo 3.7V e circuito de carregamento (ex.: TP4056)
+- Placa de desenvolvimento ou circuito com conectores adequados
+- (Opcional) Impressão 3D do case
+
+## Pinagem (I2C - exemplo)
+- SDA: GPIO 8
+- SCL: GPIO 9
+- VCC: 3.3V
+- GND: GND
+
+Confirme a pinagem no seu hardware antes de alimentar o sistema.
+
+## Preparar o firmware MicroPython
+1. Baixe a imagem de firmware MicroPython compatível com seu modelo de ESP32 (por exemplo, a imagem oficial para ESP32/ESP32-S3).
+2. Conecte o ESP32 ao computador via USB.
+3. No PowerShell (Windows), apague a flash e grave o firmware (substitua `<firmware.bin>` pelo nome do arquivo que você baixou e `COM3` pela porta correta):
+
+```powershell
+esptool.py --chip esp32 --port COM3 erase_flash
+esptool.py --chip esp32 --port COM3 write_flash -z 0x1000 <firmware.bin>
 ```
 
-Alternative: use `ampy` (older) or `rshell`.
+Observação: se você não tiver `esptool.py`, instale com `pip install esptool`.
 
-Tips
-- Only copy files you need (for faster flashing) e.g. `mpremote fs put main.py /` and `mpremote fs put lib/ /lib`.
-- Reboot the device after copying: `mpremote connect serial://COM3 run 'import machine; machine.reset()'`.
+## Enviar o firmware e arquivos do projeto para o dispositivo
+Recomenda-se usar `mpremote` para copiar os arquivos do repositório para o ESP32. Substitua `COM3` pela porta correta.
 
-## Calibration
-- `accel_cal.json` contains accelerometer calibration used at runtime. Keep this file if you need reproducible sensor calibration, or remove it before publishing if it contains sensitive test data.
+```powershell
+# listar dispositivos conectados
+mpremote list
 
-## Usage
-- Power the AeroGlove hardware and ensure the IMU is properly connected (SDA/SCL to ESP32 I2C pins or SPI wiring depending on your driver configuration).
-- The `main.py` file contains the gesture-to-command mapping used during flight. Edit and tune thresholds in the sensor/driver files or a dedicated `config.py` as needed.
+# enviar o arquivo principal
+mpremote connect serial://COM3 fs put main.py /
 
-Since gesture mapping and flight control loops are highly hardware-specific, read the relevant sections in `mpu9250.py`/`mpu6500.py` and `main.py` before flying.
+# enviar a pasta de bibliotecas (se existir)
+mpremote connect serial://COM3 fs put lib/ /lib
 
-## Hardware (typical)
-- ESP32 development board (e.g. ESP32 DevKit)
-- IMU: MPU6500 / MPU9250 (+ AK8963 magnetometer)
-- Motor ESCs, brushless motors, propellers
-- Battery and power distribution
-- (Optional) BLE remote device for telemetry/control
+# enviar arquivo de calibração
+mpremote connect serial://COM3 fs put accel_cal.json /
 
-## Contributing
-- Contributions are welcome. Open an issue first to discuss larger changes.
-- Fork the repo, create a feature branch, add tests or examples, and open a pull request.
+# reiniciar o dispositivo
+mpremote connect serial://COM3 run "import machine; machine.reset()"
+```
 
-## License
-This project is intended to be open source. Add a `LICENSE` file (MIT recommended) to publish under that license. If you'd like, I can add an `MIT` LICENSE file now.
+Alternativa: use a IDE Thonny para enviar os arquivos via interface gráfica.
 
-## CI / Quality
-- You can add a GitHub Actions workflow to run linters or static checks on PRs. If you want, I can add a minimal workflow that checks Python formatting or runs basic unit tests.
+## Calibração do IMU
+1. Coloque a luva/lógica com o IMU sobre uma superfície estável numa posição neutra.
+2. Ligue o dispositivo ou reinicie-o para que o procedimento de calibração automática (se implementado) seja executado.
+3. Mantenha a mão/parada imóvel durante o ciclo de calibração (10–15 segundos).
+4. Verifique o arquivo `accel_cal.json` no dispositivo para confirmar que os valores de calibração foram gravados (se aplicável).
 
-## Security
-- Do not commit device credentials, private keys, or Wi-Fi passwords. Use `secrets.py` locally and add it to `.gitignore`.
+## Verificar sensores (teste rápido)
+Abra um REPL e execute comandos para confirmar leitura do IMU (exemplo genérico):
 
-## Contacts / Acknowledgements
-- Created for the PyDrone community. If you publish, include a short description and a link back to this repository.
+```powershell
+mpremote connect serial://COM3 repl
+# no REPL do MicroPython
+import mpu9250
+imu = mpu9250.MPU9250()
+print(imu.accel)
+```
+
+Se receber valores plausíveis (próximos de 0,0,1g em repouso para o eixo Z), o sensor está funcionando.
+
+## Procedimento de ensaio em voo (reprodução dos resultados)
+AVISO: realize testes de voo em área aberta, com proteção e seguindo normas de segurança. Retire hélices para testes iniciais quando possível.
+
+1. Monte o drone com motores, ESCs e alimentação. Verifique conexões.
+2. Ligue o drone e a luva (AeroGlove). Aguarde até que a luva indique estado pronto (LED piscando para aguardar conexão BLE).
+3. Emparelhe a luva com o sistema de voo do drone via BLE (o LED deve ficar estável quando conectado).
+4. No solo, com hélices removidas ou com proteção, faça o teste de comandos: incline a mão para frente — verifique se o drone recebe comando de avanço; incline para trás — comando de recuo; inclinações laterais — comandos de roll; movimentos de rotação da mão — yaw.
+5. Ao validar a correspondência gesto→comando, prossiga para um teste com hélices e baixa altitude, com retenção manual do drone para verificar resposta de controle.
+
+## Indicadores de status
+- LED piscando: aguardando conexão BLE
+- LED fixo: conectado ao drone
+
+## Arquivos principais usados na reprodução
+- `main.py` — loop principal e mapeamento de gestos
+- `mpu9250.py` / `mpu6500.py` — drivers do IMU
+- `ak8963.py` — driver do magnetômetro (se aplicável)
+- `accel_cal.json` — calibração
+
+## Segurança e boas práticas
+- Teste sem hélices nas fases iniciais.
+- Use óculos de proteção e mantenha distância segura.
+- Verifique a integridade da bateria antes de cada voo.
 
 ---
-If you want, I can also:
-- add an `MIT` `LICENSE` file,
-- create a minimal GitHub Actions workflow,
-- prepare a `flash.sh` / `flash.ps1` helper script to simplify device uploads.
-
-Tell me which of those you'd like me to add and I'll make the edits.
+Autor: Thiago Araujo
