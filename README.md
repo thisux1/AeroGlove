@@ -25,9 +25,10 @@ Este repositório é a fonte do projeto PyDrone (trabalho de conclusão). Para c
 - Verifique `main.py`, `boot.py` e os drivers de IMU (`mpu6500.py`, `mpu9250.py`, `ak8963.py`) para ajustar a configuração dos sensores e o mapeamento de gestos ao seu hardware.
 - Use `mpremote` (ou `ampy`) para transferir os arquivos para o ESP32 (exemplos abaixo).
 
-Observações
-- Não comite credenciais do dispositivo, chaves privadas ou senhas de Wi‑Fi. Mantenha arquivos sensíveis localmente e adicione-os ao `.gitignore`.
-
+### Repositório do dispositivo base utilizado:
+```bash
+https://github.com/01studio-lab/pyDrone
+```
 ## Gravação / implantação no ESP32 (exemplos para PowerShell no Windows)
 Recomenda-se usar o `mpremote` (parte do conjunto de ferramentas mpremote). Isso copia os arquivos do repositório para o sistema de arquivos do dispositivo.
 
