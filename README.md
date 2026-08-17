@@ -26,33 +26,11 @@ O sistema opera com um pipeline de baixíssima latência (`< 10ms`), integrando 
 
 ## Arquitetura de Comunicação e Fluxo de Telemetria
 
-```
- ┌─────────────────────────────────────────────────────────┐
- │               TRANSMISSOR / CONTROLADOR                 │
- │                                                         │
- │   ┌───────────────┐        ┌────────────────────────┐   │
- │   │  GY-91 Module │ I2C    │     ESP32-S3 Core      │   │
- │   │  • MPU-9250   │───────▶│ • Madgwick AHRS (100Hz)│   │
- │   │  • BMP280     │ 400kHz │ • Deadband & Expo Map  │   │
- │   └───────────────┘        │ • 14-byte Packet Gen   │   │
- │                            └───────────┬────────────┘   │
- └────────────────────────────────────────┼────────────────┘
-                                          │
-                               ESP-NOW RF Link (2.4GHz)
-                               Latência < 10ms | Peer-to-Peer
-                                          │
- ┌────────────────────────────────────────▼────────────────┐
- │                 MICRODRONE QUADCOPTER                   │
- │                                                         │
- │   ┌────────────────────────┐        ┌───────────────┐   │
- │   │     ESP32 Receiver     │ PWM    │  Motores /    │   │
- │   │ • ESP-NOW RX Polling   │───────▶│  ESC Driver   │   │
- │   │ • Canal Decoder (4CH)  │ DShot  │  (M1,M2,M3,M4)│   │
- │   │ • Failsafe Watchdog    │        └───────────────┘   │
- │   │   (Timeout > 200ms)    │                            │
- │   └────────────────────────┘                            │
- └─────────────────────────────────────────────────────────┘
-```
+Abaixo está o mapeamento visual do pipeline de processamento e despacho de pacotes da stack PyDrone:
+
+<p align="center">
+  <img src="./docs/architecture.svg" alt="Fluxo de Arquitetura PyDrone" width="100%" />
+</p>
 
 ### Ciclo de Vida do Pacote de Controle
 
