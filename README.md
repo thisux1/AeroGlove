@@ -1,6 +1,6 @@
-<!-- BANNER ANIMADO PYDRONE -->
+<!-- BANNER ANIMADO AEROGLOVE / PYDRONE -->
 <p align="center">
-  <img src="./docs/banner.svg" alt="PyDrone Banner" width="100%" />
+  <img src="./docs/banner.svg" alt="AeroGlove Banner" width="100%" />
 </p>
 
 <!-- TECH BADGES MINIMALISTAS E HIGH-TECH -->
@@ -11,109 +11,195 @@
   <img src="https://img.shields.io/badge/IMU-GY--91_/_MPU9250-black?style=flat-square&logo=sensor&logoColor=38BDF8&labelColor=030712" alt="IMU GY-91" />
   <img src="https://img.shields.io/badge/AHRS-Madgwick_100Hz-black?style=flat-square&logo=speedtest&logoColor=00F0FF&labelColor=030712" alt="Madgwick AHRS" />
   <img src="https://img.shields.io/badge/BLE-Nordic_NUS-black?style=flat-square&logo=bluetooth&logoColor=0082FC&labelColor=030712" alt="BLE NUS" />
-  <img src="https://img.shields.io/badge/Latency-%3C10ms-black?style=flat-square&logo=lightning&logoColor=FACC15&labelColor=030712" alt="Latency" />
+  <img src="https://img.shields.io/badge/License-MIT-black?style=flat-square&logo=opensourceinitiative&logoColor=green&labelColor=030712" alt="License MIT" />
 </p>
 
 ---
 
-## Visão Geral
+## 🧤 Visão Geral do Projeto
 
-**PyDrone** é uma stack modular de controle de voo, fusão sensorial e telemetria sem fio desenvolvida em **MicroPython** para microdrones quadricópteros baseados na arquitetura **ESP32 / ESP32-S3**.
+O **AeroGlove** é uma luva controladora vestível (*wearable*) desenvolvida em **MicroPython** sobre o microcontrolador **ESP32 / ESP32-S3**, projetada para pilotagem intuitiva de microdrones (**pyDrone**) por meio de **gestos naturais da mão**.
 
-O sistema opera com um pipeline de baixíssima latência (`< 10ms`), integrando um transmissor/controlador por atitude (com fusão de sensores 9-DOF via filtro Madgwick AHRS em 100Hz) a um receptor de voo inteligente via protocolo sem fio peer-to-peer **ESP-NOW** com failsafe automático e suporte a **BLE NUS (Nordic UART Service)**.
+O sistema captura as movimentações do operador através de uma IMU 9-DOF (módulo **GY-91** com **MPU-9250** e barômetro **BMP280**), processa a orientação espacial em tempo real com o algoritmo de fusão **Madgwick AHRS @ 100Hz** e traduz as atitudes angulares da mão em canais de voo RC (*Throttle*, *Roll*, *Pitch*, *Yaw*), transmitindo os comandos por **ESP-NOW** (latência `< 10ms`) ou via **BLE NUS (Nordic UART Service)**.
 
 ---
 
-## Arquitetura de Comunicação e Fluxo de Telemetria
+## 📐 Arquitetura do Sistema e Fluxo de Telemetria
 
-Abaixo está o mapeamento visual do pipeline de processamento e despacho de pacotes da stack PyDrone:
+Abaixo está o mapeamento visual do processamento contínuo desde o gesto da mão na luva até a atuação dos motores na aeronave:
 
 <p align="center">
-  <img src="./docs/architecture.svg" alt="Fluxo de Arquitetura PyDrone" width="100%" />
+  <img src="./docs/architecture.svg" alt="Fluxo de Arquitetura AeroGlove / PyDrone" width="100%" />
 </p>
 
-### Ciclo de Vida do Pacote de Controle
+### Ciclo de Operação e Processamento de Gestos
 
-1. **Amostragem Sensorial (GY-91)**: O sensor lê o acelerômetro, giroscópio e magnetômetro (MPU-9250) junto com o barômetro (BMP280) via barramento I2C a 400kHz.
-2. **Fusão de Atitude (Madgwick AHRS)**: O algoritmo de quatérnios calcula a orientação do dispositivo (`Roll`, `Pitch`, `Yaw`) em tempo real a uma taxa contínua de 100Hz ($\beta = 0.08$).
-3. **Mapeamento de Canais**: Os ângulos calculados passam por zonas mortas (*deadband*) e curvas de exponencial (*expo*) para conversão precisa em pulsos RC padrão (1000µs a 2000µs, centro em 1500µs).
-4. **Transmissão Sem Fio ESP-NOW**: O transmissor despacha um pacote binário empacotado de 14 bytes direcionado ao endereço MAC físico do drone.
-5. **Recepção e Failsafe de Segurança**: O drone decodifica os 4 canais de rádio e alimenta o mixer de potência dos 4 motores. Caso nenhum pacote seja recebido dentro de um intervalo de segurança de `200ms`, o mecanismo de *failsafe* atua preventivamente atenuando os motores.
-
----
-
-## Estrutura do Pacote ESP-NOW (14 Bytes)
-
-O protocolo de telemetria binária do PyDrone opera com pacotes compactos de 14 bytes para maximizar o throughput e minimizar o jitter de transmissão:
-
-| Offset (Bytes) | Campo | Tipo | Descrição |
-| :--- | :--- | :--- | :--- |
-| `0x00 - 0x01` | **Seq Number** | `uint16_be` | Contador incremental de sequência de pacote para detecção de perdas |
-| `0x02 - 0x03` | **Throttle** | `uint16_be` | Canal de aceleração/potência (1000 - 2000 µs) |
-| `0x04 - 0x05` | **Roll** | `uint16_be` | Ângulo de inclinação lateral Roll (1000 - 2000 µs) |
-| `0x06 - 0x07` | **Pitch** | `uint16_be` | Ângulo de inclinação longitudinal Pitch (1000 - 2000 µs) |
-| `0x08 - 0x09` | **Yaw** | `uint16_be` | Ângulo de rotação Yaw (1000 - 2000 µs) |
-| `0x0A - 0x0B` | **Telemetry Temp** | `int16_be` | Temperatura do barômetro BMP280 com offset escalonado `(T + 40) * 10` |
-| `0x0C - 0x0D` | **Reservado / Aux** | `uint16_be` | Bytes de expansão para canais auxiliares (Arm/Disarm, Flight Modes) |
+1. **Captura do Gesto (Luva / GY-91)**: Leitura dos dados brutos de aceleração linear, velocidade angular e pressão barométrica via barramento I2C a 400kHz.
+2. **Fusão de Atitude (Madgwick AHRS)**: O algoritmo calcula quatérnios de rotação contínuos a uma taxa de 100Hz ($\beta = 0.08$), eliminando o drift giroscópico e gerando os ângulos reais de *Roll*, *Pitch* e *Yaw*.
+3. **Mapeamento de Comandos RC**:
+   - **Inclinação Frontal / Traseira**: Controla o *Pitch* (Avanço / Recuo).
+   - **Inclinação Lateral**: Controla o *Roll* (Deslocamento Esquerda / Direita).
+   - **Rotação do Punho**: Controla o *Yaw* (Giro no próprio eixo).
+   - Aplicação de **Deadband** (zona morta no centro neutro) e curva **Exponencial** para controle suave.
+4. **Transmissão Sem Fio**: Empacotamento binário em 14 bytes e envio ultrarrápido via protocolo **ESP-NOW** (ou fallback BLE NUS).
+5. **Recepção e Segurança (Drone)**: O receptor decodifica os canais, alimenta o mixer dos 4 motores e mantém ativo o *Watchdog Failsafe* (se ficar sem sinal por $> 200\text{ms}$, os motores são desativados preventivamente).
 
 ---
 
-## Estrutura dos Módulos
+## 🛠️ Materiais e Componentes de Hardware
+
+| Componente | Especificação Recomendada | Função |
+| :--- | :--- | :--- |
+| **Microcontrolador (MCU)** | ESP32-S3 Dual-Core (ou ESP32 Standard) | Processamento central da luva e do drone |
+| **Sensor Inercial (IMU)** | Módulo GY-91 (MPU-9250 + BMP280) | Giroscópio, Acelerômetro, Magnetômetro e Barômetro |
+| **Alimentação da Luva** | Bateria LiPo 3.7V (ex.: 500mAh a 1200mAh) | Fonte de alimentação autônoma e portátil |
+| **Carregador de Bateria** | Módulo TP4056 com proteção | Carga via porta USB Type-C / Micro-USB |
+| **Estrutura Vestível** | Luva esportiva / têxtil + Case impresso em 3D | Fixação ergonômica da eletrônica na mão/punho |
+| **Aeronave de Voo Base** | Microdrone Quadcopter (Quad-X) | Plataforma de voo (ex.: base [pyDrone 01Studio](https://github.com/01studio-lab/pyDrone)) |
+
+---
+
+## 🔌 Pinagem do Hardware (Barramento I2C)
+
+Conecte o módulo **GY-91** ao ESP32 conforme o mapeamento padrão:
 
 ```
-pydrone/
-├── controller/                   # Módulos do Rádio / Transmissor
-│   ├── espnow_tx.py             # Script principal de transmissão ESP-NOW
-│   ├── imu_madgwick.py          # Implementação pura em Python do Madgwick AHRS
-│   ├── gy91.py                  # Driver integrado para o módulo GY-91 (9-DOF + Baro)
-│   ├── mpu925x.py               # Driver I2C para MPU-9250 / MPU-9255
-│   ├── bmp280_min.py            # Driver leve para sensor de pressão barométrica BMP280
-│   ├── ble_nus_client.py        # Cliente BLE NUS para controle alternativo via Bluetooth
-│   └── test_gy91_madgwick.py    # Suite de teste e calibração de sensores
-├── drone/                        # Módulos embarcados na Aeronave
-│   └── espnow_rx.py             # Receptor ESP-NOW com decodificador e failsafe
-└── docs/                         # Ativos visuais e documentação
-    └── banner.svg               # Banner interativo em SVG vetorizado
+  Módulo GY-91                 ESP32 / ESP32-S3
+ ┌──────────────┐             ┌──────────────────┐
+ │     VCC      │────────────▶│  3.3V            │
+ │     GND      │────────────▶│  GND             │
+ │     SDA      │────────────▶│  GPIO 8  (I2C)   │
+ │     SCL      │────────────▶│  GPIO 9  (I2C)   │
+ └──────────────┘             └──────────────────┘
+```
+
+> **Atenção:** Confirme a pinagem e o nível de tensão (3.3V) da sua placa antes de energizar o circuito.
+
+---
+
+## 🚀 Guia de Instalação e Inicialização
+
+### 1. Gravar o Firmware MicroPython no ESP32
+
+Instale o `esptool` via terminal:
+```bash
+pip install esptool
+```
+
+Conecte a placa ESP32 ao computador via USB e execute a limpeza e gravação da flash (substitua `<firmware.bin>` e a porta serial correspondente, ex.: `COM3` no Windows ou `/dev/ttyUSB0` no Linux):
+
+```bash
+# Apagar a memória flash
+esptool.py --chip esp32s3 --port COM3 erase_flash
+
+# Gravar o binário do MicroPython
+esptool.py --chip esp32s3 --port COM3 write_flash -z 0x0 <firmware.bin>
 ```
 
 ---
 
-## Hardware Recomendado
+### 2. Transferir os Arquivos para o Dispositivo
 
-*   **Processador Principal**: ESP32-S3 Dual-Core (240MHz) ou ESP32 Standard.
-*   **Sensor IMU 9-DOF / 10-DOF**: Módulo **GY-91** (MPU-9250 Gyro/Accel/Mag + BMP280 Barômetro).
-*   **Barramento I2C Padrão**:
-    *   `SDA` $\rightarrow$ Pino **GPIO 8**
-    *   `SCL` $\rightarrow$ Pino **GPIO 9**
-    *   Frequência: `400 kHz`
-*   **Frame**: Microdrone Quadcopter (X-Frame / Whoop) com motores Coreless DC ou Brushless.
+Recomenda-se utilizar a ferramenta oficial `mpremote` (ou a IDE Thonny):
+
+```bash
+# Instalar mpremote
+pip install mpremote
+
+# Listar dispositivos seriais conectados
+mpremote list
+
+# Enviar os módulos do controlador (Luva)
+mpremote connect COM3 fs cp controller/espnow_tx.py :main.py
+mpremote connect COM3 fs cp controller/imu_madgwick.py :imu_madgwick.py
+mpremote connect COM3 fs cp controller/gy91.py :gy91.py
+mpremote connect COM3 fs cp controller/mpu925x.py :mpu925x.py
+mpremote connect COM3 fs cp controller/bmp280_min.py :bmp280_min.py
+mpremote connect COM3 fs cp controller/ble_nus_client.py :ble_nus_client.py
+
+# Reiniciar o dispositivo
+mpremote connect COM3 run "import machine; machine.reset()"
+```
 
 ---
 
-## Como Executar
+### 3. Calibração da Posição Neutra da IMU
 
-### 1. Obter o MAC Address do Drone
-No console do MicroPython na placa do drone, execute:
+1. Coloque a luva com a IMU sobre uma superfície plana e estável, com a mão aberta em posição neutra.
+2. Ligue o dispositivo ou execute o script de calibração.
+3. Mantenha a mão imóvel por 10 a 15 segundos durante a amostragem inicial para que o filtro Madgwick convirja o vetor de aceleração gravitacional ($1.0g$ no eixo Z).
+
+---
+
+### 4. Teste Rápido via REPL Interativo
+
+Abra o prompt interativo do MicroPython para validar as leituras dos sensores:
+
+```bash
+mpremote connect COM3 repl
+```
+
+No prompt:
 ```python
-import network
-sta = network.WLAN(network.STA_IF)
-sta.active(True)
-print("MAC Address:", sta.config('mac'))
-```
+from machine import Pin, I2C
+from gy91 import GY91
 
-### 2. Configurar o Transmissor
-No arquivo `controller/espnow_tx.py`, insira o endereço MAC obtido no passo anterior:
-```python
-# controller/espnow_tx.py
-PEER_MAC = b'\xaa\xbb\xcc\xdd\xee\xff'  # Substitua pelo MAC do seu drone
-main(PEER_MAC)
-```
+i2c = I2C(0, sda=Pin(8), scl=Pin(9), freq=400000)
+sensor = GY91(i2c)
 
-### 3. Iniciar o Receptor de Voo no Drone
-Carregue e execute `drone/espnow_rx.py` na controladora do drone. O loop aguardará os pacotes de controle e manterá a checagem de timeout ativa.
+# Leitura inercial (ax, ay, az, gx, gy, gz)
+print("IMU:", sensor.read_imu())
+
+# Leitura barométrica (temperatura em °C e pressão em Pa)
+print("Baro:", sensor.read_baro())
+```
 
 ---
 
-## Licença
+## 🛩️ Procedimento de Ensaio em Voo e Segurança
 
-Distribuído sob a licença MIT. Consulte `LICENSE` para mais informações.
+> **AVISO DE SEGURANÇA:** Realize os testes iniciais sempre com as **hélices removidas** ou em bancada de testes protegida.
+
+1. **Verificação de Hardware**: Confira o aperto dos motores, as conexões de alimentação e o estado de carga da bateria LiPo.
+2. **Pareamento Sem Fio**: Ligue a luva (AeroGlove) e o drone. O LED de status indicará a sincronização do link ESP-NOW/BLE.
+3. **Teste de Bancada (Sem Hélices)**:
+   - Incline a mão suavemente para frente $\rightarrow$ verifique o aumento proporcional de empuxo nos motores traseiros (*Pitch Down* / Avanço).
+   - Incline a mão para a direita $\rightarrow$ verifique a compensação nos motores do lado esquerdo (*Roll Right*).
+   - Gire a mão no sentido horário $\rightarrow$ verifique a rotação dos pares diagonais (*Yaw Clockwise*).
+4. **Teste de Voo Prático**: Com as hélices instaladas, inicie em área aberta e plana, executando pequenos saltos (*hover*) em baixa altitude para validar a estabilidade dos comandos.
+
+---
+
+## 📂 Estrutura do Repositório
+
+```
+AeroGlove/
+├── controller/                   # Firmware da Luva Transmissora (AeroGlove)
+│   ├── espnow_tx.py             # Loop principal de envio ESP-NOW @ 100Hz
+│   ├── imu_madgwick.py          # Filtro de fusão de orientação Madgwick AHRS
+│   ├── gy91.py                  # Driver composto para o módulo GY-91 (9-DOF + Baro)
+│   ├── mpu925x.py               # Driver minimalista otimizado para MPU-9250 / MPU-9255
+│   ├── bmp280_min.py            # Driver para sensor barométrico de altitude BMP280
+│   ├── ble_nus_client.py        # Cliente alternativo BLE Nordic UART Service
+│   └── test_gy91_madgwick.py    # Testes de convergência e calibração de sensores
+├── drone/                        # Firmware Embarcado no Drone (Receptor)
+│   └── espnow_rx.py             # Receptor ESP-NOW com decodificador 4CH e failsafe
+└── docs/                         # Documentação e Diagramas Vetoriais
+    ├── banner.svg               # Banner interativo em SVG
+    └── architecture.svg         # Diagrama de fluxo e arquitetura de controle
+```
+
+---
+
+## 🔗 Referências e Projetos Relacionados
+
+*   Dispositivo e arquitetura base de drone utilizada: [pyDrone (01studio-lab)](https://github.com/01studio-lab/pyDrone)
+*   Algoritmo de Fusão Sensorial: *Madgwick, S. O. (2010). An efficient orientation filter for inertial and inertial/magnetic sensor arrays.*
+
+---
+
+## 👤 Autor
+
+Desenvolvido por **Thiago Araújo** ([@thisux1](https://github.com/thisux1)).
+
+Distribuído sob a licença **MIT**. Consulte `LICENSE` para mais detalhes.

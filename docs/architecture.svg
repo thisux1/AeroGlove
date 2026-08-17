@@ -105,15 +105,15 @@
   <!-- 2. TOP HEADER DECORATION -->
   <line x1="0" y1="36" x2="1080" y2="36" stroke="rgba(56, 189, 248, 0.12)" stroke-width="1"/>
   <circle cx="25" cy="22" r="3" fill="#00f0ff" class="live-dot" filter="url(#glow-soft)"/>
-  <text x="36" y="25" class="font-tech title-strip">ARQUITETURA DE CONTROLE E FLUXO DE TELEMETRIA // PYDRONE STACK</text>
+  <text x="36" y="25" class="font-tech title-strip">ARQUITETURA DE CONTROLE GESTUAL E FLUXO DE TELEMETRIA // AEROGLOVE</text>
   <text x="1055" y="25" class="font-tech title-strip" text-anchor="end" fill="rgba(56, 189, 248, 0.4)">PROTOCOL: ESP-NOW 2.4G</text>
 
   <!-- ==================== NODE 1: IMU SENSOR ==================== -->
   <g transform="translate(25, 60)">
     <polygon points="8,0 172,0 180,8 180,102 172,110 8,110 0,102 0,8" fill="rgba(15, 23, 42, 0.8)" stroke="rgba(56, 189, 248, 0.3)" stroke-width="1.5"/>
     <rect x="12" y="14" width="4" height="12" fill="#38bdf8" />
-    <text x="22" y="24" class="font-tech node-title">01. SENSOR 9-DOF</text>
-    <text x="12" y="46" class="font-tech node-subtext">Módulo GY-91</text>
+    <text x="22" y="24" class="font-tech node-title">01. SENSOR (LUVA)</text>
+    <text x="12" y="46" class="font-tech node-subtext">Módulo GY-91 na Mão</text>
     <text x="12" y="60" class="font-tech node-subtext">MPU-9250 (Giro/Acel)</text>
     <text x="12" y="74" class="font-tech node-subtext">BMP280 (Barômetro)</text>
     <text x="12" y="96" class="font-tech node-tag" fill="#38bdf8">[ I2C @ 400kHz ]</text>
@@ -128,9 +128,9 @@
     <polygon points="8,0 172,0 180,8 180,102 172,110 8,110 0,102 0,8" fill="rgba(15, 23, 42, 0.8)" stroke="#00f0ff" stroke-width="1.5" filter="url(#glow-cyan)"/>
     <rect x="12" y="14" width="4" height="12" fill="#00f0ff" />
     <text x="22" y="24" class="font-tech node-title">02. MADGWICK AHRS</text>
-    <text x="12" y="46" class="font-tech node-subtext">Fusão por Quatérnios</text>
-    <text x="12" y="60" class="font-tech node-subtext">Taxa Fixa @ 100Hz</text>
-    <text x="12" y="74" class="font-tech node-subtext">Deadband &amp; Expo Map</text>
+    <text x="12" y="46" class="font-tech node-subtext">Fusão de Atitude 100Hz</text>
+    <text x="12" y="60" class="font-tech node-subtext">Quatérnios sem Drift</text>
+    <text x="12" y="74" class="font-tech node-subtext">Deadband &amp; Expo Gestual</text>
     <text x="12" y="96" class="font-tech node-tag" fill="#00f0ff">[ R / P / Y / THR ]</text>
   </g>
 
@@ -157,11 +157,11 @@
   <g transform="translate(670, 60)">
     <polygon points="8,0 172,0 180,8 180,102 172,110 8,110 0,102 0,8" fill="rgba(15, 23, 42, 0.8)" stroke="#0ea5e9" stroke-width="1.5" filter="url(#glow-soft)"/>
     <rect x="12" y="14" width="4" height="12" fill="#0ea5e9" />
-    <text x="22" y="24" class="font-tech node-title">04. FLIGHT CONTROLLER</text>
+    <text x="22" y="24" class="font-tech node-title">04. RECEPTOR (DRONE)</text>
     <text x="12" y="46" class="font-tech node-subtext">ESP32 Receiver Polling</text>
-    <text x="12" y="60" class="font-tech node-subtext">Decodificador de Canais</text>
-    <text x="12" y="74" class="font-tech node-subtext">Failsafe Timeout 200ms</text>
-    <text x="12" y="96" class="font-tech node-tag" fill="#0ea5e9">[ WATCHDOG ATIVO ]</text>
+    <text x="12" y="60" class="font-tech node-subtext">Decodificador 4 Canais</text>
+    <text x="12" y="74" class="font-tech node-subtext">Failsafe Watchdog 200ms</text>
+    <text x="12" y="96" class="font-tech node-tag" fill="#0ea5e9">[ FAILSAFE ATIVO ]</text>
   </g>
 
   <!-- Flow 4 -> 5 -->
