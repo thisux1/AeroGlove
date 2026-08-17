@@ -1,6 +1,6 @@
 <!-- BANNER ANIMADO PYDRONE -->
 <p align="center">
-  <img src="docs/banner.svg" alt="PyDrone Banner" width="100%" style="border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);" />
+  <img src="./docs/banner.svg" alt="PyDrone Banner" width="100%" />
 </p>
 
 <!-- TECH BADGES MINIMALISTAS E HIGH-TECH -->
