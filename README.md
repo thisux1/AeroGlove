@@ -1,154 +1,141 @@
-# AeroGlove — PyDrone (ESP32 gesture-controlled drone)
+<!-- BANNER ANIMADO PYDRONE -->
+<p align="center">
+  <img src="docs/banner.svg" alt="PyDrone Banner" width="100%" style="border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-Projeto MicroPython leve para ESP32 que implementa controle gestual de drones (PyDrone). O dispositivo lê uma IMU (MPU6500/MPU9250 + AK8963) e traduz gestos da mão em comandos de voo (throttle, pitch, roll, yaw). Este repositório contém drivers, utilitários BLE e firmware de exemplo para o controlador de voo AeroGlove.
-
-## Principais funcionalidades
-- Drivers de IMU: `mpu6500.py`, `mpu9250.py`, `ak8963.py`
-- Utilitários BLE e exemplos (arquivos `ble_*`, pasta `lib/aioble`)
-- Scripts de entrada: `boot.py`, `main.py`
-- Armazenamento de calibração: `accel_cal.json`
-
-## Estrutura do repositório
-- `boot.py`, `main.py` — inicialização do dispositivo e loop principal
-- `mpu6500.py`, `mpu9250.py`, `ak8963.py` — drivers dos sensores
-- `ble_advertising.py`, `ble_simple_peripheral.py` — exemplos BLE
-- `lib/aioble/` — biblioteca aioble incluída para exemplos
-- `accel_cal.json` — dados de calibração do acelerômetro
-
-## Início rápido — desenvolvimento local
-
-Este repositório é a fonte do projeto PyDrone (trabalho de conclusão). Para começar localmente:
-
-- Clone ou copie o projeto para sua máquina de desenvolvimento.
-- Verifique `main.py`, `boot.py` e os drivers de IMU (`mpu6500.py`, `mpu9250.py`, `ak8963.py`) para ajustar a configuração dos sensores e o mapeamento de gestos ao seu hardware.
-- Use `mpremote` (ou `ampy`) para transferir os arquivos para o ESP32 (exemplos abaixo).
-
-### Repositório do dispositivo base utilizado:
-```bash
-https://github.com/01studio-lab/pyDrone
-```
-## Gravação / implantação no ESP32 (exemplos para PowerShell no Windows)
-Recomenda-se usar o `mpremote` (parte do conjunto de ferramentas mpremote). Isso copia os arquivos do repositório para o sistema de arquivos do dispositivo.
-
-```powershell
-# AeroGlove 🧤✈️
-> Controle Gestual para Drones com ESP32 e MicroPython
-
-Este documento contém apenas instruções passo a passo para que usuários reproduzam os resultados demonstrados pelo projeto AeroGlove. Siga cada etapa com atenção. Não contém dicas de desenvolvimento.
-
-## Resumo do projeto
-O AeroGlove é uma luva controladora capaz de pilotar drones por gestos, usando um ESP32 e uma IMU (MPU9250/MPU6500 + AK8963). O firmware é escrito em MicroPython.
-
-## Materiais necessários
-- MCU: ESP32-S3 (ou ESP32 padrão)
-# AeroGlove 🧤✈️
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-Controle Gestual para Drones com ESP32 e MicroPython
-
-Este documento contém apenas instruções passo a passo para que usuários reproduzam os resultados do projeto AeroGlove. Siga cada etapa com atenção. Não contém dicas de desenvolvimento.
-
-## Resumo
-O AeroGlove é uma luva controladora que permite pilotar drones por meio de gestos naturais da mão. Utiliza um ESP32 e um módulo IMU (MPU9250/MPU6500 + AK8963). O firmware é escrito em MicroPython.
-
-## Materiais necessários
-- MCU: ESP32-S3 (ou ESP32 padrão)
-- IMU: Módulo GY-91 (MPU9250 ou MPU6500 + AK8963)
-- Bateria LiPo 3.7V e circuito de carregamento (ex.: TP4056)
-- Placa de desenvolvimento ou circuito com conectores adequados
-- (Opcional) Case impresso em 3D
-
-## Pinagem (exemplo I2C)
-- SDA: GPIO 8
-- SCL: GPIO 9
-- VCC: 3.3V
-- GND: GND
-
-Confirme a pinagem no seu hardware antes de alimentar o sistema.
-
-## Preparar o firmware MicroPython
-1. Baixe a imagem de firmware MicroPython compatível com o seu modelo de ESP32.
-2. Conecte o ESP32 ao computador via USB.
-3. No PowerShell (Windows), apague a flash e escreva o firmware (substitua `<firmware.bin>` e `COM3` pelos valores corretos):
-
-```powershell
-esptool.py --chip esp32 --port COM3 erase_flash
-esptool.py --chip esp32 --port COM3 write_flash -z 0x1000 <firmware.bin>
-```
-
-Se necessário, instale o esptool com:
-
-```powershell
-pip install esptool
-```
-
-## Enviar os arquivos do projeto para o dispositivo
-Recomenda-se usar o `mpremote` para copiar os arquivos para o ESP32. Substitua `COM3` pela porta correta.
-
-```powershell
-# listar dispositivos conectados
-mpremote list
-
-# enviar o arquivo principal
-mpremote connect serial://COM3 fs put main.py /
-
-# enviar a pasta de bibliotecas (se existir)
-mpremote connect serial://COM3 fs put lib/ /lib
-
-# enviar arquivo de calibração
-mpremote connect serial://COM3 fs put accel_cal.json /
-
-# reiniciar o dispositivo
-mpremote connect serial://COM3 run "import machine; machine.reset()"
-```
-
-Alternativa: use a IDE Thonny para enviar os arquivos via interface gráfica.
-
-## Calibração do IMU
-1. Coloque a luva com o IMU sobre uma superfície estável em posição neutra.
-2. Ligue o dispositivo ou reinicie-o para executar a calibração automática (se implementada).
-3. Mantenha a mão imóvel durante o ciclo de calibração (10–15 segundos).
-4. Verifique o arquivo `accel_cal.json` no dispositivo para confirmar que os valores foram salvos.
-
-## Verificar sensores (teste rápido)
-Abra um REPL (prompt interativo) e execute comandos para confirmar leitura do IMU:
-
-```powershell
-mpremote connect serial://COM3 repl
-# no prompt do MicroPython
-import mpu9250
-imu = mpu9250.MPU9250()
-print(imu.accel)
-```
-
-Se os valores estiverem plausíveis (aproximadamente 0,0,1g no eixo Z em repouso), o sensor está funcionando.
-
-## Procedimento de ensaio em voo (reprodução dos resultados)
-AVISO: realize testes em área aberta, com proteção adequada e seguindo normas de segurança. Nas fases iniciais, remova as hélices quando possível.
-
-1. Monte o drone com motores, ESCs e alimentação. Verifique todas as conexões.
-2. Ligue o drone e a luva (AeroGlove). Aguarde o estado pronto (LED piscando indica espera por conexão BLE).
-3. Emparelhe a luva com o sistema de voo via BLE (LED fica estável quando conectado).
-4. No solo, com hélices removidas ou com proteção, execute os testes: inclinar a mão para frente — comando de avanço; inclinar para trás — recuo; inclinações laterais — roll; rotação da mão — yaw.
-5. Após validar a correspondência gesto→comando, faça um teste com hélices em baixa altitude e supervisão cuidadosa.
-
-## Indicadores de status
-- LED piscando: aguardando conexão BLE
-- LED fixo: conectado
-
-## Arquivos principais usados na reprodução
-- `main.py` — loop principal e mapeamento de gestos
-- `mpu9250.py` / `mpu6500.py` — drivers do IMU
-- `ak8963.py` — driver do magnetômetro
-- `accel_cal.json` — calibração
-
-## Segurança e boas práticas
-- Teste sem hélices nas fases iniciais.
-- Use óculos de proteção e mantenha distância segura.
-- Verifique a integridade da bateria antes de cada voo.
+<!-- TECH BADGES MINIMALISTAS E HIGH-TECH -->
+<p align="center">
+  <img src="https://img.shields.io/badge/MicroPython-v1.20+-black?style=flat-square&logo=python&logoColor=38BDF8&labelColor=030712" alt="MicroPython" />
+  <img src="https://img.shields.io/badge/ESP--NOW-2.4GHz-black?style=flat-square&logo=espressif&logoColor=E7352C&labelColor=030712" alt="ESP-NOW" />
+  <img src="https://img.shields.io/badge/ESP32--S3-Dual_Core-black?style=flat-square&logo=espressif&logoColor=white&labelColor=030712" alt="ESP32-S3" />
+  <img src="https://img.shields.io/badge/IMU-GY--91_/_MPU9250-black?style=flat-square&logo=sensor&logoColor=38BDF8&labelColor=030712" alt="IMU GY-91" />
+  <img src="https://img.shields.io/badge/AHRS-Madgwick_100Hz-black?style=flat-square&logo=speedtest&logoColor=00F0FF&labelColor=030712" alt="Madgwick AHRS" />
+  <img src="https://img.shields.io/badge/BLE-Nordic_NUS-black?style=flat-square&logo=bluetooth&logoColor=0082FC&labelColor=030712" alt="BLE NUS" />
+  <img src="https://img.shields.io/badge/Latency-%3C10ms-black?style=flat-square&logo=lightning&logoColor=FACC15&labelColor=030712" alt="Latency" />
+</p>
 
 ---
-Autor: Thiago Araujo
+
+## Visão Geral
+
+**PyDrone** é uma stack modular de controle de voo, fusão sensorial e telemetria sem fio desenvolvida em **MicroPython** para microdrones quadricópteros baseados na arquitetura **ESP32 / ESP32-S3**.
+
+O sistema opera com um pipeline de baixíssima latência (`< 10ms`), integrando um transmissor/controlador por atitude (com fusão de sensores 9-DOF via filtro Madgwick AHRS em 100Hz) a um receptor de voo inteligente via protocolo sem fio peer-to-peer **ESP-NOW** com failsafe automático e suporte a **BLE NUS (Nordic UART Service)**.
+
+---
+
+## Arquitetura de Comunicação e Fluxo de Telemetria
+
+```
+ ┌─────────────────────────────────────────────────────────┐
+ │               TRANSMISSOR / CONTROLADOR                 │
+ │                                                         │
+ │   ┌───────────────┐        ┌────────────────────────┐   │
+ │   │  GY-91 Module │ I2C    │     ESP32-S3 Core      │   │
+ │   │  • MPU-9250   │───────▶│ • Madgwick AHRS (100Hz)│   │
+ │   │  • BMP280     │ 400kHz │ • Deadband & Expo Map  │   │
+ │   └───────────────┘        │ • 14-byte Packet Gen   │   │
+ │                            └───────────┬────────────┘   │
+ └────────────────────────────────────────┼────────────────┘
+                                          │
+                               ESP-NOW RF Link (2.4GHz)
+                               Latência < 10ms | Peer-to-Peer
+                                          │
+ ┌────────────────────────────────────────▼────────────────┐
+ │                 MICRODRONE QUADCOPTER                   │
+ │                                                         │
+ │   ┌────────────────────────┐        ┌───────────────┐   │
+ │   │     ESP32 Receiver     │ PWM    │  Motores /    │   │
+ │   │ • ESP-NOW RX Polling   │───────▶│  ESC Driver   │   │
+ │   │ • Canal Decoder (4CH)  │ DShot  │  (M1,M2,M3,M4)│   │
+ │   │ • Failsafe Watchdog    │        └───────────────┘   │
+ │   │   (Timeout > 200ms)    │                            │
+ │   └────────────────────────┘                            │
+ └─────────────────────────────────────────────────────────┘
+```
+
+### Ciclo de Vida do Pacote de Controle
+
+1. **Amostragem Sensorial (GY-91)**: O sensor lê o acelerômetro, giroscópio e magnetômetro (MPU-9250) junto com o barômetro (BMP280) via barramento I2C a 400kHz.
+2. **Fusão de Atitude (Madgwick AHRS)**: O algoritmo de quatérnios calcula a orientação do dispositivo (`Roll`, `Pitch`, `Yaw`) em tempo real a uma taxa contínua de 100Hz ($\beta = 0.08$).
+3. **Mapeamento de Canais**: Os ângulos calculados passam por zonas mortas (*deadband*) e curvas de exponencial (*expo*) para conversão precisa em pulsos RC padrão (1000µs a 2000µs, centro em 1500µs).
+4. **Transmissão Sem Fio ESP-NOW**: O transmissor despacha um pacote binário empacotado de 14 bytes direcionado ao endereço MAC físico do drone.
+5. **Recepção e Failsafe de Segurança**: O drone decodifica os 4 canais de rádio e alimenta o mixer de potência dos 4 motores. Caso nenhum pacote seja recebido dentro de um intervalo de segurança de `200ms`, o mecanismo de *failsafe* atua preventivamente atenuando os motores.
+
+---
+
+## Estrutura do Pacote ESP-NOW (14 Bytes)
+
+O protocolo de telemetria binária do PyDrone opera com pacotes compactos de 14 bytes para maximizar o throughput e minimizar o jitter de transmissão:
+
+| Offset (Bytes) | Campo | Tipo | Descrição |
+| :--- | :--- | :--- | :--- |
+| `0x00 - 0x01` | **Seq Number** | `uint16_be` | Contador incremental de sequência de pacote para detecção de perdas |
+| `0x02 - 0x03` | **Throttle** | `uint16_be` | Canal de aceleração/potência (1000 - 2000 µs) |
+| `0x04 - 0x05` | **Roll** | `uint16_be` | Ângulo de inclinação lateral Roll (1000 - 2000 µs) |
+| `0x06 - 0x07` | **Pitch** | `uint16_be` | Ângulo de inclinação longitudinal Pitch (1000 - 2000 µs) |
+| `0x08 - 0x09` | **Yaw** | `uint16_be` | Ângulo de rotação Yaw (1000 - 2000 µs) |
+| `0x0A - 0x0B` | **Telemetry Temp** | `int16_be` | Temperatura do barômetro BMP280 com offset escalonado `(T + 40) * 10` |
+| `0x0C - 0x0D` | **Reservado / Aux** | `uint16_be` | Bytes de expansão para canais auxiliares (Arm/Disarm, Flight Modes) |
+
+---
+
+## Estrutura dos Módulos
+
+```
+pydrone/
+├── controller/                   # Módulos do Rádio / Transmissor
+│   ├── espnow_tx.py             # Script principal de transmissão ESP-NOW
+│   ├── imu_madgwick.py          # Implementação pura em Python do Madgwick AHRS
+│   ├── gy91.py                  # Driver integrado para o módulo GY-91 (9-DOF + Baro)
+│   ├── mpu925x.py               # Driver I2C para MPU-9250 / MPU-9255
+│   ├── bmp280_min.py            # Driver leve para sensor de pressão barométrica BMP280
+│   ├── ble_nus_client.py        # Cliente BLE NUS para controle alternativo via Bluetooth
+│   └── test_gy91_madgwick.py    # Suite de teste e calibração de sensores
+├── drone/                        # Módulos embarcados na Aeronave
+│   └── espnow_rx.py             # Receptor ESP-NOW com decodificador e failsafe
+└── docs/                         # Ativos visuais e documentação
+    └── banner.svg               # Banner interativo em SVG vetorizado
+```
+
+---
+
+## Hardware Recomendado
+
+*   **Processador Principal**: ESP32-S3 Dual-Core (240MHz) ou ESP32 Standard.
+*   **Sensor IMU 9-DOF / 10-DOF**: Módulo **GY-91** (MPU-9250 Gyro/Accel/Mag + BMP280 Barômetro).
+*   **Barramento I2C Padrão**:
+    *   `SDA` $\rightarrow$ Pino **GPIO 8**
+    *   `SCL` $\rightarrow$ Pino **GPIO 9**
+    *   Frequência: `400 kHz`
+*   **Frame**: Microdrone Quadcopter (X-Frame / Whoop) com motores Coreless DC ou Brushless.
+
+---
+
+## Como Executar
+
+### 1. Obter o MAC Address do Drone
+No console do MicroPython na placa do drone, execute:
+```python
+import network
+sta = network.WLAN(network.STA_IF)
+sta.active(True)
+print("MAC Address:", sta.config('mac'))
+```
+
+### 2. Configurar o Transmissor
+No arquivo `controller/espnow_tx.py`, insira o endereço MAC obtido no passo anterior:
+```python
+# controller/espnow_tx.py
+PEER_MAC = b'\xaa\xbb\xcc\xdd\xee\xff'  # Substitua pelo MAC do seu drone
+main(PEER_MAC)
+```
+
+### 3. Iniciar o Receptor de Voo no Drone
+Carregue e execute `drone/espnow_rx.py` na controladora do drone. O loop aguardará os pacotes de controle e manterá a checagem de timeout ativa.
+
+---
+
+## Licença
+
+Distribuído sob a licença MIT. Consulte `LICENSE` para mais informações.
