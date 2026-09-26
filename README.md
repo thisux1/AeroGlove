@@ -1,10 +1,35 @@
-<!-- BANNER ANIMADO AEROGLOVE / PYDRONE -->
-<p align="center">
-  <img src="./docs/banner.svg" alt="AeroGlove Banner" width="100%" />
-</p>
+<div align="center">
+  <a href="#root"><img src="./docs/banner.svg?v=2" alt="AeroGlove" width="100%"/></a>
+</div>
 
-<!-- TECH BADGES MINIMALISTAS E HIGH-TECH -->
-<p align="center">
+> 🇧🇷 [Versão em Português](docs/README.pt-BR.md)
+
+<table width="100%">
+  <tr>
+    <td width="50%" valign="top">
+      <pre lang="bash"><code>$ aeroglove / briefing
+----------------------------------------------
+• airframe : pyDrone quad-X microdrone
+• input    : hand attitude, glove-mounted IMU
+• sensor   : GY-91 · MPU-9250 9-DOF + BMP280
+• channels : THR / ROLL / PITCH / YAW (µs)
+• shaping  : deadband 0.02 · expo 0.3 · ±30° FS
+• packet   : 14 B binary @ 100 Hz, ESP-NOW</code></pre>
+    </td>
+    <td width="50%" valign="top">
+      <pre lang="python"><code>class Glove:
+    fusion   = MadgwickAHRS(beta=0.08)  # 100 Hz
+    link     = "esp-now | ble-nus fallback"
+    failsafe = "cut motors > 200 ms silent"
+    mcu      = "esp32-s3 · micropython"
+    tooling  = ["esptool", "mpremote"]</code></pre>
+    </td>
+  </tr>
+</table>
+
+### ❯ badges
+
+<p align="left">
   <img src="https://img.shields.io/badge/MicroPython-v1.20+-black?style=flat-square&logo=python&logoColor=38BDF8&labelColor=030712" alt="MicroPython" />
   <img src="https://img.shields.io/badge/ESP--NOW-2.4GHz-black?style=flat-square&logo=espressif&logoColor=E7352C&labelColor=030712" alt="ESP-NOW" />
   <img src="https://img.shields.io/badge/ESP32--S3-Dual_Core-black?style=flat-square&logo=espressif&logoColor=white&labelColor=030712" alt="ESP32-S3" />
@@ -16,100 +41,99 @@
 
 ---
 
-## 🧤 Visão Geral do Projeto
+### ❯ what_is_this
 
-O **AeroGlove** é uma luva controladora vestível (*wearable*) desenvolvida em **MicroPython** sobre o microcontrolador **ESP32 / ESP32-S3**, projetada para pilotagem intuitiva de microdrones (**pyDrone**) por meio de **gestos naturais da mão**.
+AeroGlove is a wearable glove controller that flies a quadcopter with bare hand
+gestures. An ESP32-S3 running MicroPython samples a GY-91 IMU (MPU-9250 9-DOF
+plus BMP280 barometer) over I2C at 400 kHz, fuses orientation with Madgwick
+AHRS at 100 Hz (β = 0.08), maps hand attitude to the four RC channels
+(throttle, roll, pitch, yaw) with deadband and exponential shaping, and streams
+14-byte binary packets over ESP-NOW to a receiver on the drone. BLE NUS is
+wired in as a fallback link. If the receiver hears nothing for more than
+200 ms, it cuts the motors.
 
-O sistema captura as movimentações do operador através de uma IMU 9-DOF (módulo **GY-91** com **MPU-9250** e barômetro **BMP280**), processa a orientação espacial em tempo real com o algoritmo de fusão **Madgwick AHRS @ 100Hz** e traduz as atitudes angulares da mão em canais de voo RC (*Throttle*, *Roll*, *Pitch*, *Yaw*), transmitindo os comandos por **ESP-NOW** (latência `< 10ms`) ou via **BLE NUS (Nordic UART Service)**.
-
----
-
-## 📐 Arquitetura do Sistema e Fluxo de Telemetria
-
-Abaixo está o mapeamento visual do processamento contínuo desde o gesto da mão na luva até a atuação dos motores na aeronave:
-
-<p align="center">
-  <img src="./docs/architecture.svg" alt="Fluxo de Arquitetura AeroGlove / PyDrone" width="100%" />
-</p>
-
-### Ciclo de Operação e Processamento de Gestos
-
-1. **Captura do Gesto (Luva / GY-91)**: Leitura dos dados brutos de aceleração linear, velocidade angular e pressão barométrica via barramento I2C a 400kHz.
-2. **Fusão de Atitude (Madgwick AHRS)**: O algoritmo calcula quatérnios de rotação contínuos a uma taxa de 100Hz ($\beta = 0.08$), eliminando o drift giroscópico e gerando os ângulos reais de *Roll*, *Pitch* e *Yaw*.
-3. **Mapeamento de Comandos RC**:
-   - **Inclinação Frontal / Traseira**: Controla o *Pitch* (Avanço / Recuo).
-   - **Inclinação Lateral**: Controla o *Roll* (Deslocamento Esquerda / Direita).
-   - **Rotação do Punho**: Controla o *Yaw* (Giro no próprio eixo).
-   - Aplicação de **Deadband** (zona morta no centro neutro) e curva **Exponencial** para controle suave.
-4. **Transmissão Sem Fio**: Empacotamento binário em 14 bytes e envio ultrarrápido via protocolo **ESP-NOW** (ou fallback BLE NUS).
-5. **Recepção e Segurança (Drone)**: O receptor decodifica os canais, alimenta o mixer dos 4 motores e mantém ativo o *Watchdog Failsafe* (se ficar sem sinal por $> 200\text{ms}$, os motores são desativados preventivamente).
+The target airframe is the [pyDrone](https://github.com/01studio-lab/pyDrone)
+quad-X platform from 01Studio.
 
 ---
 
-## 🛠️ Materiais e Componentes de Hardware
+### ❯ signal_chain
 
-| Componente | Especificação Recomendada | Função |
+<div align="center">
+  <img src="./docs/architecture.svg?v=2" alt="AeroGlove signal chain" width="100%"/>
+</div>
+
+From knuckle to propeller, one loop iteration:
+
+1. **Sample:** raw acceleration, angular rate and barometric pressure read off
+   the GY-91 over I2C at 400 kHz.
+2. **Fuse:** `MadgwickAHRS` integrates quaternions at 100 Hz with β = 0.08,
+   cancelling gyro drift and producing roll, pitch and yaw angles.
+3. **Map:** forward/back tilt drives pitch, lateral tilt drives roll, wrist
+   rotation drives yaw. A 0.02 deadband kills jitter around neutral and an
+   expo curve (0.3) softens the center stick feel; full scale is about ±30°.
+4. **Transmit:** channels are packed into a fixed 14-byte frame (sequence,
+   four u16 channel values, temperature, reserved) and sent over ESP-NOW every
+   10 ms. Sub-10 ms air latency; BLE NUS client available as fallback.
+5. **Fail safe:** the onboard receiver feeds the quad mixer and runs a
+   watchdog: more than 200 ms without a packet and the motors shut down.
+
+---
+
+### ❯ hardware
+
+| Component | Recommended spec | Role |
 | :--- | :--- | :--- |
-| **Microcontrolador (MCU)** | ESP32-S3 Dual-Core (ou ESP32 Standard) | Processamento central da luva e do drone |
-| **Sensor Inercial (IMU)** | Módulo GY-91 (MPU-9250 + BMP280) | Giroscópio, Acelerômetro, Magnetômetro e Barômetro |
-| **Alimentação da Luva** | Bateria LiPo 3.7V (ex.: 500mAh a 1200mAh) | Fonte de alimentação autônoma e portátil |
-| **Carregador de Bateria** | Módulo TP4056 com proteção | Carga via porta USB Type-C / Micro-USB |
-| **Estrutura Vestível** | Luva esportiva / têxtil + Case impresso em 3D | Fixação ergonômica da eletrônica na mão/punho |
-| **Aeronave de Voo Base** | Microdrone Quadcopter (Quad-X) | Plataforma de voo (ex.: base [pyDrone 01Studio](https://github.com/01studio-lab/pyDrone)) |
+| MCU | ESP32-S3 dual-core (or standard ESP32) | Glove and drone compute |
+| IMU | GY-91 module (MPU-9250 + BMP280) | Gyro, accel, magnetometer, barometer |
+| Glove power | 3.7 V LiPo (500-1200 mAh) | Untethered supply |
+| Charger | TP4056 module with protection | USB-C / micro-USB charging |
+| Wearable frame | Sports/textile glove + 3D-printed case | Mounts electronics on the hand |
+| Airframe | Quad-X microdrone | Flight platform ([pyDrone 01Studio](https://github.com/01studio-lab/pyDrone)) |
 
 ---
 
-## 🔌 Pinagem do Hardware (Barramento I2C)
+### ❯ pinout
 
-Conecte o módulo **GY-91** ao ESP32 conforme o mapeamento padrão:
+Wire the GY-91 to the ESP32's I2C bus:
 
 ```
-  Módulo GY-91                 ESP32 / ESP32-S3
- ┌──────────────┐             ┌──────────────────┐
- │     VCC      │────────────▶│  3.3V            │
- │     GND      │────────────▶│  GND             │
- │     SDA      │────────────▶│  GPIO 8  (I2C)   │
- │     SCL      │────────────▶│  GPIO 9  (I2C)   │
- └──────────────┘             └──────────────────┘
+  GY-91 module                ESP32 / ESP32-S3
+ ┌──────────────┐            ┌──────────────────┐
+ │     VCC      │───────────▶│  3.3V            │
+ │     GND      │───────────▶│  GND             │
+ │     SDA      │───────────▶│  GPIO 8  (I2C)   │
+ │     SCL      │───────────▶│  GPIO 9  (I2C)   │
+ └──────────────┘            └──────────────────┘
 ```
 
-> **Atenção:** Confirme a pinagem e o nível de tensão (3.3V) da sua placa antes de energizar o circuito.
+> Check your board's pinout and confirm the bus is 3.3 V before powering up.
 
 ---
 
-## 🚀 Guia de Instalação e Inicialização
+### ❯ flash_and_fly
 
-### 1. Gravar o Firmware MicroPython no ESP32
+**1. Burn MicroPython onto the ESP32**
 
-Instale o `esptool` via terminal:
 ```bash
 pip install esptool
-```
 
-Conecte a placa ESP32 ao computador via USB e execute a limpeza e gravação da flash (substitua `<firmware.bin>` e a porta serial correspondente, ex.: `COM3` no Windows ou `/dev/ttyUSB0` no Linux):
-
-```bash
-# Apagar a memória flash
+# wipe flash
 esptool.py --chip esp32s3 --port COM3 erase_flash
 
-# Gravar o binário do MicroPython
+# write the MicroPython binary
 esptool.py --chip esp32s3 --port COM3 write_flash -z 0x0 <firmware.bin>
 ```
 
----
+Use your serial port (`COM3` on Windows, `/dev/ttyUSB0` on Linux).
 
-### 2. Transferir os Arquivos para o Dispositivo
-
-Recomenda-se utilizar a ferramenta oficial `mpremote` (ou a IDE Thonny):
+**2. Push the firmware with mpremote**
 
 ```bash
-# Instalar mpremote
 pip install mpremote
-
-# Listar dispositivos seriais conectados
 mpremote list
 
-# Enviar os módulos do controlador (Luva)
+# transmitter files (glove)
 mpremote connect COM3 fs cp controller/espnow_tx.py :main.py
 mpremote connect COM3 fs cp controller/imu_madgwick.py :imu_madgwick.py
 mpremote connect COM3 fs cp controller/gy91.py :gy91.py
@@ -117,29 +141,22 @@ mpremote connect COM3 fs cp controller/mpu925x.py :mpu925x.py
 mpremote connect COM3 fs cp controller/bmp280_min.py :bmp280_min.py
 mpremote connect COM3 fs cp controller/ble_nus_client.py :ble_nus_client.py
 
-# Reiniciar o dispositivo
 mpremote connect COM3 run "import machine; machine.reset()"
 ```
 
----
+**3. Calibrate the IMU neutral pose**
 
-### 3. Calibração da Posição Neutra da IMU
+1. Rest the glove on a flat surface, hand open in a neutral pose.
+2. Power the board (or run the calibration script).
+3. Keep the hand still for 10-15 s so the Madgwick filter converges on the
+   gravity vector (1.0 g on Z).
 
-1. Coloque a luva com a IMU sobre uma superfície plana e estável, com a mão aberta em posição neutra.
-2. Ligue o dispositivo ou execute o script de calibração.
-3. Mantenha a mão imóvel por 10 a 15 segundos durante a amostragem inicial para que o filtro Madgwick convirja o vetor de aceleração gravitacional ($1.0g$ no eixo Z).
-
----
-
-### 4. Teste Rápido via REPL Interativo
-
-Abra o prompt interativo do MicroPython para validar as leituras dos sensores:
+**4. Sanity-check over REPL**
 
 ```bash
 mpremote connect COM3 repl
 ```
 
-No prompt:
 ```python
 from machine import Pin, I2C
 from gy91 import GY91
@@ -147,59 +164,53 @@ from gy91 import GY91
 i2c = I2C(0, sda=Pin(8), scl=Pin(9), freq=400000)
 sensor = GY91(i2c)
 
-# Leitura inercial (ax, ay, az, gx, gy, gz)
-print("IMU:", sensor.read_imu())
-
-# Leitura barométrica (temperatura em °C e pressão em Pa)
-print("Baro:", sensor.read_baro())
+print("IMU:", sensor.read_imu())   # ax, ay, az, gx, gy, gz
+print("Baro:", sensor.read_baro()) # °C, Pa
 ```
 
 ---
 
-## 🛩️ Procedimento de Ensaio em Voo e Segurança
+### ❯ bench_test
 
-> **AVISO DE SEGURANÇA:** Realize os testes iniciais sempre com as **hélices removidas** ou em bancada de testes protegida.
+> **Safety first: run every early test with the propellers off**, or on a
+> protected bench rig.
 
-1. **Verificação de Hardware**: Confira o aperto dos motores, as conexões de alimentação e o estado de carga da bateria LiPo.
-2. **Pareamento Sem Fio**: Ligue a luva (AeroGlove) e o drone. O LED de status indicará a sincronização do link ESP-NOW/BLE.
-3. **Teste de Bancada (Sem Hélices)**:
-   - Incline a mão suavemente para frente $\rightarrow$ verifique o aumento proporcional de empuxo nos motores traseiros (*Pitch Down* / Avanço).
-   - Incline a mão para a direita $\rightarrow$ verifique a compensação nos motores do lado esquerdo (*Roll Right*).
-   - Gire a mão no sentido horário $\rightarrow$ verifique a rotação dos pares diagonais (*Yaw Clockwise*).
-4. **Teste de Voo Prático**: Com as hélices instaladas, inicie em área aberta e plana, executando pequenos saltos (*hover*) em baixa altitude para validar a estabilidade dos comandos.
-
----
-
-## 📂 Estrutura do Repositório
-
-```
-AeroGlove/
-├── controller/                   # Firmware da Luva Transmissora (AeroGlove)
-│   ├── espnow_tx.py             # Loop principal de envio ESP-NOW @ 100Hz
-│   ├── imu_madgwick.py          # Filtro de fusão de orientação Madgwick AHRS
-│   ├── gy91.py                  # Driver composto para o módulo GY-91 (9-DOF + Baro)
-│   ├── mpu925x.py               # Driver minimalista otimizado para MPU-9250 / MPU-9255
-│   ├── bmp280_min.py            # Driver para sensor barométrico de altitude BMP280
-│   ├── ble_nus_client.py        # Cliente alternativo BLE Nordic UART Service
-│   └── test_gy91_madgwick.py    # Testes de convergência e calibração de sensores
-├── drone/                        # Firmware Embarcado no Drone (Receptor)
-│   └── espnow_rx.py             # Receptor ESP-NOW com decodificador 4CH e failsafe
-└── docs/                         # Documentação e Diagramas Vetoriais
-    ├── banner.svg               # Banner interativo em SVG
-    └── architecture.svg         # Diagrama de fluxo e arquitetura de controle
-```
+1. Hardware check: motor screws, power wiring, LiPo charge level.
+2. Pairing: power the glove and the drone; the status LED reports the
+   ESP-NOW/BLE link sync.
+3. Bench test (no props):
+   - Tilt hand forward → rear motors spin up (pitch down / forward).
+   - Tilt hand right → left-side motors compensate (roll right).
+   - Rotate wrist clockwise → diagonal motor pairs respond (yaw CW).
+4. Flight test: with props on, start in an open flat area with short low
+   hops to validate command stability.
 
 ---
 
-## 🔗 Referências e Projetos Relacionados
+### ❯ repo_map
 
-*   Dispositivo e arquitetura base de drone utilizada: [pyDrone (01studio-lab)](https://github.com/01studio-lab/pyDrone)
-*   Algoritmo de Fusão Sensorial: *Madgwick, S. O. (2010). An efficient orientation filter for inertial and inertial/magnetic sensor arrays.*
+<pre lang="text"><code>controller/                  glove transmitter firmware (AeroGlove)
+  ├── espnow_tx.py           main loop, ESP-NOW sender @ 100 Hz
+  ├── imu_madgwick.py        Madgwick AHRS orientation filter
+  ├── gy91.py                composite driver, GY-91 (9-DOF + baro)
+  ├── mpu925x.py             minimal MPU-9250 / MPU-9255 driver
+  ├── bmp280_min.py          BMP280 barometric altitude driver
+  ├── ble_nus_client.py      BLE Nordic UART fallback client
+  └── test_gy91_madgwick.py  sensor convergence and calibration tests
+drone/                       receiver firmware on the aircraft
+  └── espnow_rx.py           ESP-NOW RX, 4CH decode, 200 ms failsafe
+docs/                        banner.svg · architecture.svg · README.pt-BR.md
+LICENSE                      MIT</code></pre>
 
 ---
 
-## 👤 Autor
+### ❯ references
 
-Desenvolvido por **Thiago Araújo** ([@thisux1](https://github.com/thisux1)).
+- Base airframe: [pyDrone (01studio-lab)](https://github.com/01studio-lab/pyDrone)
+- Sensor fusion: Madgwick, S. O. (2010), *An efficient orientation filter for
+  inertial and inertial/magnetic sensor arrays*
 
-Distribuído sob a licença **MIT**. Consulte `LICENSE` para mais detalhes.
+---
+
+Built by **Thiago Araújo** ([@thisux1](https://github.com/thisux1)).
+Released under the [MIT License](LICENSE).
